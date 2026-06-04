@@ -56,6 +56,8 @@ fn is_in_ram(path: &Path) -> bool {
 fn main() -> Result<()> {
     let mut root_path: Option<PathBuf> = None;
     let mut process_all = false;
+    let mut force_parallel = false;
+    const USAGE: &str = "Usage: oxide [--all|-a] [--parallel|-p] <DIRECTORY>";
 
     let mut args = std::env::args();
     let _exe = args.next();
@@ -64,27 +66,35 @@ fn main() -> Result<()> {
             process_all = true;
             continue;
         }
+        if arg == "--parallel" || arg == "-p" {
+            force_parallel = true;
+            continue;
+        }
         if arg.starts_with('-') {
-            println!("Usage: oxide [--all|-a] <DIRECTORY>");
+            println!("{USAGE}");
             anyhow::bail!("Unknown option: {arg}");
         }
         if root_path.is_none() {
             root_path = Some(PathBuf::from(arg));
         } else {
-            println!("Usage: oxide [--all|-a] <DIRECTORY>");
+            println!("{USAGE}");
             anyhow::bail!("Unexpected extra argument");
         }
     }
 
     let Some(root_path) = root_path else {
-        println!("Usage: oxide [--all|-a] <DIRECTORY>");
+        println!("{USAGE}");
         return Ok(());
     };
     if !root_path.is_dir() {
         anyhow::bail!("Target path is not a directory: {:?}", root_path);
     }
 
-    if is_in_ram(&root_path) {
+    if force_parallel {
+        println!("Forced parallel mode.");
+        let stats = process_tree_parallel(&root_path, process_all);
+        report_if_nothing_to_do(stats, process_all);
+    } else if is_in_ram(&root_path) {
         println!("RAM disk: Parallel mode.");
         let stats = process_tree_parallel(&root_path, process_all);
         report_if_nothing_to_do(stats, process_all);

@@ -71,3 +71,4 @@ exiftool -a -G1 -s some.flac | grep -i acoustid
 
 - Fingerprinting uses up to ~120 seconds of audio.
 - On Linux, `oxide` will process in parallel when the target directory is on a RAM-backed filesystem (`tmpfs`/`ramfs`). On physical disks it processes sequentially and, within each directory, in filename order.
+- Use `--parallel` / `-p` to force parallel processing on non-RAM filesystems such as SSDs.
